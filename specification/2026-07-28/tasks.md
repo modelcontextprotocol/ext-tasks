@@ -843,7 +843,7 @@ The `failed` status **MUST NOT** be used to represent non-JSON-RPC errors, such 
   "jsonrpc": "2.0",
   "id": 4,
   "result": {
-    "resultType": "task",
+    "resultType": "complete",
     "taskId": "786512e2-9e0d-44bd-8f29-789f820fe840",
     "status": "failed",
     "createdAt": "2025-11-25T10:30:00Z",
@@ -867,7 +867,7 @@ For tool calls that complete successfully at the protocol level but return a too
   "jsonrpc": "2.0",
   "id": 5,
   "result": {
-    "resultType": "task",
+    "resultType": "complete",
     "taskId": "786512e2-9e0d-44bd-8f29-789f820fe840",
     "status": "completed",
     "createdAt": "2025-11-25T10:30:00Z",
