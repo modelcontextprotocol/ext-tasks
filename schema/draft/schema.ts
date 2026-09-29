@@ -192,6 +192,17 @@ export type CreateTaskResult = Result &
     resultType: "task";
   };
 
+/* Related Tasks */
+
+/**
+ * Task IDs that the client considers related to a request, carried in the
+ * request's `_meta` under `io.modelcontextprotocol/relatedTaskIds`. Advisory:
+ * a server MAY ignore it and is not required to report whether it used it.
+ *
+ * @category `tasks`
+ */
+export type RelatedTaskIds = string[];
+
 /* Task Operations */
 
 /**

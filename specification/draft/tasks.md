@@ -301,6 +301,63 @@ A server **MUST NOT** return `CreateTaskResult` until the task is durably create
 
 Server implementations that use multi round-trip requests in conjunction with task creation (for example, a tool that requires elicitation over `InputRequiredResult` before creating a task) **SHOULD** resolve all MRTR exchanges _synchronously_ before responding with a `CreateTaskResult`.
 
+## Related Tasks
+
+A client **MAY** indicate that a request relates to one or more tasks the server has already created by including `io.modelcontextprotocol/relatedTaskIds` in the request's `_meta`. The value is an array of task IDs.
+
+```typescript
+// _meta["io.modelcontextprotocol/relatedTaskIds"]
+type RelatedTaskIds = string[];
+```
+
+This key is advisory. It defines a place to express a relationship between requests and tasks, but it places no obligation on the server to act on it and does not change the request/response contract. For example, a client that cancels a task and re-issues a narrowed request can name the cancelled task so a server that still holds its partial work may reuse it, or a client can call a sibling tool that reads the current state of a task that is still running.
+
+The key is defined on requests to methods that support task augmentation. `tools/call` is the only such method in this revision. If a future revision adds task support to another method, the key applies to that method's requests on the same terms.
+
+**Example Request (CallToolRequest):**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "run_ci",
+    "arguments": {
+      "repo": "example/widgets",
+      "ref": "main",
+      "testFilter": "packages/parser"
+    },
+    "_meta": {
+      "io.modelcontextprotocol/clientCapabilities": {
+        "extensions": {
+          "io.modelcontextprotocol/tasks": {}
+        }
+      },
+      "io.modelcontextprotocol/relatedTaskIds": [
+        "786512e2-9e0d-44bd-8f29-789f320fe840"
+      ]
+    }
+  }
+}
+```
+
+Clients:
+
+- **SHOULD** only include task IDs that the same server returned in a `CreateTaskResult` under the same authorization context.
+- **SHOULD NOT** allow a language model to populate this key directly. The host or client **SHOULD** populate it from its own record of tasks it created.
+- **SHOULD NOT** assume that the order of the array carries any meaning.
+
+Servers:
+
+- **MAY** ignore `io.modelcontextprotocol/relatedTaskIds` entirely. Ignoring it is conformant and requires no signalling.
+- **MUST** apply the same authentication and authorization checks to each referenced task that they would apply to a `tasks/get` for that task before using it for any purpose.
+- **SHOULD** treat a task ID that is unrecognized or that the client is not authorized to access as if it had not been supplied, and **SHOULD NOT** respond in a way that reveals whether a referenced task exists.
+- **SHOULD** treat an empty array as equivalent to the key being absent, and **SHOULD** ignore duplicate entries. A server **MAY** limit the number of entries it processes, and **SHOULD** ignore entries beyond that limit rather than reject the request.
+- **MUST NOT** treat the presence of the key as a request to create a task. Task creation remains server-directed.
+
+The key does not by itself change the status of any referenced task, and this extension defines no mechanism for a server to report whether it used a referenced task.
+
 ## Task Polling
 
 Clients poll for task completion by sending `tasks/get` requests.
@@ -896,12 +953,14 @@ The `tasks/get` endpoint returns exactly what the underlying request would have 
 - The `tasks/` method prefix and `notifications/tasks/` notification prefix are reserved for this extension.
 - The result-discriminator value `"task"` for `resultType` is reserved for this extension.
 - The label `io.modelcontextprotocol/tasks` is reserved for this extension.
+- The `_meta` key `io.modelcontextprotocol/relatedTaskIds` is reserved for this extension.
 
 ## Security Considerations
 
 - **Task ID unguessability.** A server **MAY** use task IDs as bearer tokens for a server's stored state. Servers **MUST** generate them with sufficient entropy that a third party cannot enumerate or guess them.
 - **Auth binding.** Servers **MUST** perform authentication and authorization checks on each task-related request to ensure that the client has permission to access a task.
 - **Cross-caller correlation.** Because there is no `tasks/list`, a server cannot inadvertently leak the existence of one caller's tasks to another. This is an improvement over the `2025-11-25` tasks specification, in which a poorly-scoped list could expose unrelated task IDs.
+- **Related task references.** Task IDs in `io.modelcontextprotocol/relatedTaskIds` are untrusted caller input. A server cannot verify that a host, rather than a model, populated them, so it **MUST** authorize each one as it would a `taskId` on `tasks/get`. A server that responds differently to known and unknown references lets a caller probe which task IDs exist.
 - **Input-request trust model.** `inputRequests` carry elicitation and sampling payloads from the server through the client to the user or model. Hosts **MUST** apply the same trust model to these payloads as they would to standard elicitation/sampling requests. A task is not a higher-trust channel.
 
 ## Implementation Considerations
