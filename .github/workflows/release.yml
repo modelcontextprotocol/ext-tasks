@@ -1,12 +1,10 @@
-# Stages the @modelcontextprotocol/ext-tasks package on npm when a GitHub
+# Publishes the @modelcontextprotocol/ext-tasks package to npm when a GitHub
 # Release is published. Versioning is manual: bump packages/ext-tasks/package.json
 # in the release commit, then cut the GitHub Release from that tag — this workflow
 # picks it up from there.
 #
-# The trusted publisher only allows `npm stage publish`, so the version is not
-# public until a maintainer approves it with 2FA:
-#   npm stage list @modelcontextprotocol/ext-tasks
-#   npm stage approve <stage-id>
+# The npm trusted publisher is bound to this filename (release.yml), so renaming
+# this file breaks publishing until the npm configuration is updated to match.
 name: Publish to npm
 
 on:
@@ -63,11 +61,11 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Install dependencies
         run: npm ci
-      # `npm stage publish` first shipped in npm 11.15.0 (which also satisfies the
-      # >= 11.5.1 OIDC requirement); pin explicitly so the publish never depends
-      # on which npm the runner's Node bundles.
-      - name: Ensure npm CLI supports staged trusted publishing
-        run: npm install -g npm@11.15.0
+      # Node 24's bundled npm satisfies the >= 11.5.1 OIDC requirement only from
+      # ~24.6 onward; pin explicitly so the publish never depends on which Node
+      # patch the runner resolves.
+      - name: Ensure npm CLI supports OIDC trusted publishing
+        run: npm install -g npm@11.5.1
       # The tag is compared to the manifest before anything reaches npm, because
       # a release cut from the wrong commit (or tagged with the wrong version)
       # would otherwise publish a version that does not match its tag.
@@ -101,8 +99,36 @@ jobs:
           else
             echo "tag=" >> "$GITHUB_OUTPUT"
           fi
-      - name: Stage on npm
-        run: npm stage publish --provenance --access public ${{ steps.npm-tag.outputs.tag }}
+      - name: Publish to npm
+        run: npm publish --provenance --access public ${{ steps.npm-tag.outputs.tag }}
         working-directory: packages/ext-tasks
         env:
           NPM_CONFIG_PROVENANCE: "true"
+
+  verify:
+    name: Verify published package
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Wait for npm to serve the version
+        run: |
+          VERSION=$(node -p "require('./packages/ext-tasks/package.json').version")
+          for i in $(seq 1 30); do
+            if npm view "@modelcontextprotocol/ext-tasks@${VERSION}" version >/dev/null 2>&1; then
+              echo "npm is serving ${VERSION}."
+              exit 0
+            fi
+            echo "Not visible yet (attempt ${i}/30); waiting 10s..."
+            sleep 10
+          done
+          echo "npm never served ${VERSION} within 5 minutes of publishing."
+          exit 1
