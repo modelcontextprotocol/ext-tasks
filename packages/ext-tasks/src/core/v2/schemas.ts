@@ -365,7 +365,9 @@ const DetailedTaskV2Schema = z.discriminatedUnion("status", [
   CancelledTaskV2Schema,
 ]);
 
-const CreateTaskResultV2Schema = z.object({
+// CreateTaskResult and GetTaskResult extend the open pinned Result type, so
+// they keep unknown top-level keys, like the notification params below.
+const CreateTaskResultV2Schema = openObject({
   ...TaskBaseShape,
   status: TaskStatusV2Schema,
   resultType: z.literal("task"),
@@ -392,7 +394,7 @@ const UpdateTaskRequestV2Schema = z.object({
 const CancelTaskRequestV2Schema = taskIdRequestV2Schema("tasks/cancel");
 const GetTaskResultV2Schema = z.intersection(
   DetailedTaskV2Schema,
-  z.object({
+  openObject({
     resultType: CompleteResultTypeSchema,
     _meta: MetaSchema.optional(),
   }),
