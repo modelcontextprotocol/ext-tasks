@@ -24,7 +24,7 @@ A task ID is a durable handle that survives disconnects and carries status metad
 
 Servers only return task handles to clients that declared the extension in their per-request capabilities — otherwise, the server either blocks for a regular result as usual or returns a capability error.
 
-A server that requires task support from the client for a given request returns a `-32003` (Missing Required Client Capability) error, like so:
+A server that requires task support from the client for a given request returns a `-32021` (Missing Required Client Capability) error, like so:
 
 ```jsonc
 {
@@ -32,7 +32,7 @@ A server that requires task support from the client for a given request returns 
   "id": 1,
   "error": {
     // MISSING_REQUIRED_CLIENT_CAPABILITY
-    "code": -32003,
+    "code": -32021,
     "message": "Missing required client capability",
     "data": {
       "requiredCapabilities": {
