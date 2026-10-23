@@ -52,7 +52,7 @@
     }
   },
   "peerDependencies": {
-    "@modelcontextprotocol/client": "^2.0.0"
+    "@modelcontextprotocol/client": "^2.2.0"
   },
   "peerDependenciesMeta": {
     "@modelcontextprotocol/client": {
@@ -88,7 +88,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@modelcontextprotocol/client": "^2.0.0",
+    "@modelcontextprotocol/client": "^2.2.0",
     "eslint": "^10.10.0",
     "eslint-plugin-jsdoc": "^64.3.5",
     "fast-check": "^4.9.0",
