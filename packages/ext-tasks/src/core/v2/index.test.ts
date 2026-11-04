@@ -725,6 +725,29 @@ describe("V2 runtime wire contracts", () => {
     ).toBe(false);
   });
 
+  it("keeps extension fields on task creation and tasks/get results", () => {
+    // Both results extend the open pinned Result type, like the notification
+    // params: stripping unknown top-level keys here would hide extensions from
+    // projectTask() on the polling path only.
+    const [task] = fc.sample(taskFor("working"), 1);
+    const created = CreateTaskResultV2Schema.safeParse(
+      asJson({ ...task, resultType: "task", "vendor/trace": { hop: 1 } }),
+    );
+    const fetched = GetTaskResultV2Schema.safeParse(
+      asJson({ ...task, resultType: "complete", "vendor/trace": { hop: 1 } }),
+    );
+    expect(created.success).toBe(true);
+    if (created.success)
+      expect((created.data as Record<string, unknown>)["vendor/trace"]).toEqual(
+        { hop: 1 },
+      );
+    expect(fetched.success).toBe(true);
+    if (fetched.success)
+      expect((fetched.data as Record<string, unknown>)["vendor/trace"]).toEqual(
+        { hop: 1 },
+      );
+  });
+
   it("decodes detailed task notifications with exact envelope discriminators", () => {
     fc.assert(
       fc.property(taskFor("working"), (task) => {
