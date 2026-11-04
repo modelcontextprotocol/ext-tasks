@@ -1,6 +1,6 @@
 {
   "name": "@modelcontextprotocol/ext-tasks",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Client and protocol support for MCP Tasks",
   "license": "Apache-2.0",
   "type": "module",
