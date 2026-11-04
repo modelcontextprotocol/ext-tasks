@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        client-version: ["2.0.0", "2"]
+        client-version: ["2.2.0", "2"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

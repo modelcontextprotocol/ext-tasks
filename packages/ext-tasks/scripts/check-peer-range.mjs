@@ -12,8 +12,8 @@ const clientSpecifier = process.argv[2];
 
 assert.match(
   clientSpecifier ?? "",
-  /^(?:2|2\.0\.0)$/u,
-  "Pass exactly 2.0.0 or 2: 2 resolves the latest stable 2.x release.",
+  /^(?:2|2\.2\.0)$/u,
+  "Pass exactly 2.2.0 or 2: 2 resolves the latest stable 2.x release.",
 );
 
 function run(command, args, options = {}) {
