@@ -884,6 +884,13 @@
         "inputRequests"
       ]
     },
+    "RelatedTaskIds": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "Task": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
